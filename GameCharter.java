@@ -15,17 +15,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 
 public class GameCharter extends JPanel
 implements ActionListener {
 	
-	JButton startB, endB, grabTimeB, addKeyB, addMaybeKeyB, addHighlightB, addReplayB;
-	JTextField elapsedTimeTF, grabbedTimeTF, descriptionTF, lastEntryTF;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7020594083809321560L;
+	
+	private static final String file_dir = "C:\\GameCharter files\\";
+	
+	JButton startB, endB, grabTimeB, addKeyB, addMaybeKeyB, addHighlightB, addReplayB, oopsB, backupB;
+	JTextField elapsedTimeTF, grabbedTimeTF, descriptionTF, lastEntryTF, filenameTF;
+	JPanel buttonPanel;
+	
+	ArrayList <String> entries = new ArrayList();
 	
 	LocalDateTime gameStart;
-	String grabbedTime, description, lastEntry;
+	String grabbedTime, description, lastEntry, filename;
 	
 	Clipboard clipboard;
 	
@@ -33,7 +46,7 @@ implements ActionListener {
 	
 	MyTableModel myTable = new MyTableModel();
     JTable table = new JTable(myTable);
-	
+
 	static final String START = "start";
 	static final String END = "end";
 	static final String GRABTIME = "grabTime";
@@ -41,6 +54,8 @@ implements ActionListener {
 	static final String ADDMAYBEKEY = "addMaybeKey";
 	static final String ADDHIGHLIGHT = "addHighlight";
 	static final String ADDREPLAY = "addReplay";
+	static final String OOPS = "oops";
+	static final String BACKUP = "backup";
 	
 	public GameCharter() {
 		
@@ -48,12 +63,7 @@ implements ActionListener {
 		
 		clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		
-		try {
-			fw = new FileWriter(new File("C:\\GameCharter files\\game_chart.tsv"));
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		buttonPanel = new JPanel();
 		
 		// GridBagLayout gridbag = (GridBagLayout)getLayout();
         GridBagConstraints c = new GridBagConstraints();
@@ -66,6 +76,11 @@ implements ActionListener {
 		endB.setActionCommand(END);
 		endB.addActionListener(this);
 		endB.setEnabled(false);
+
+		backupB = new JButton("Backup");
+		backupB.setActionCommand(BACKUP);
+		backupB.addActionListener(this);
+		backupB.setEnabled(false);
 
 		grabTimeB = new JButton("Grab time");
 		grabTimeB.setActionCommand(GRABTIME);
@@ -92,6 +107,14 @@ implements ActionListener {
 		addReplayB.addActionListener(this);
 		addReplayB.setEnabled(false);
 		
+		oopsB = new JButton("Oops");
+		oopsB.setActionCommand(OOPS);
+		oopsB.addActionListener(this);
+		oopsB.setEnabled(false);
+		
+		filenameTF = new JTextField(20);
+		filenameTF.setEditable(true);
+		
 		elapsedTimeTF = new JTextField(8);
 		elapsedTimeTF.setEditable(false);
 
@@ -101,7 +124,7 @@ implements ActionListener {
 		descriptionTF = new JTextField(30);
 		descriptionTF.setEditable(false);
 		
-		lastEntryTF = new JTextField(80);
+		lastEntryTF = new JTextField(40);
 		lastEntryTF.setEditable(false);
 	
 	    table.setPreferredScrollableViewportSize(new Dimension(500, 70));
@@ -114,7 +137,11 @@ implements ActionListener {
 	    //add(scrollPane);
 
 	    // TODO getRootPane().setDefaultButton(grabTimeB);
-
+ 
+	    // TODO button to save interim file with timestamp
+	    // TODO refactor to use maybe an ArrayList and only write file at end or when interim button pressed
+	    // TODO Enter key on description saves as regular highlight
+/*	    
 	    c.fill = GridBagConstraints.HORIZONTAL;
 	    c.gridx = 0;
 	    c.gridy = 0;
@@ -193,17 +220,140 @@ implements ActionListener {
 	    c.gridy = 7;
 	    c.gridx = 0;
 	    add (table, c);
+*/
 	    
-	 }
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+	    c.gridx = 0;
+	    c.gridy = 0;
+//	    c.weightx = 0.33;
+//	    c.insets = new Insets(0,0,10,0);  //bottom padding
+//	    //c.gridwidth = 1;
+//	    c.anchor = GridBagConstraints.PAGE_START;
+	    add(filenameTF, c);
+
+	    c.gridx = 0;
+	    c.gridy = 1;
+	    add(startB, c);
+	 
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    c.weightx = 0.5;
+	    c.gridx = 1;
+	    c.gridy = 0;
+//	    c.weightx = 0.33;
+//	    c.insets = new Insets(0,0,10,0);  //bottom padding
+//	    c.anchor = GridBagConstraints.PAGE_START;
+	    add(elapsedTimeTF, c);
+	 
+	    c.gridx = 2;
+	    c.gridy = 0;
+	    add(backupB, c);
+	    
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    c.weightx = 0.5;
+	    c.gridx = 3;
+	    c.gridy = 0;
+//	    c.insets = new Insets(0,0,10,0);  //bottom padding
+//	    c.weightx = 0.33;
+//	    c.anchor = GridBagConstraints.PAGE_START;
+	    add(endB, c);
+	 
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    c.ipady = 40;      //make this component tall
+//	    c.gridwidth = 2;
+	    c.gridx = 0;
+	    c.gridy = 2;
+//	    c.weightx = 0.33;
+//	    c.insets = new Insets(10,10,10,10);  //top padding
+//	    c.anchor = GridBagConstraints.CENTER;
+	    add(grabTimeB, c);
+	 
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    c.ipady = 0;       //reset to default
+//	//    c.weighty = 1.0;   //request any extra vertical space
+//	    //c.insets = new Insets(10,0,0,0);  //top padding
+	    c.gridx = 1;       //aligned with button 2
+//	    //c.gridwidth = 2;   //2 columns wide
+	    c.gridy = 2;       //third row
+	    add(grabbedTimeTF, c);
+	    
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    //c.ipady = 40;      //make this component tall
+//	    c.weightx = 0.0;
+//	    c.gridwidth = 1;
+	    c.gridx = 0;
+	    c.gridy = 4;
+	    add(descriptionTF, c);
+	 
+//	    c.fill = GridBagConstraints.HORIZONTAL;
+//	    c.weightx = 0.5;
+	    c.gridx = 0;
+	    c.gridy = 5;
+//	    c.gridwidth = 1;
+//	    c.anchor = GridBagConstraints.PAGE_END; //bottom of space
+
+	    buttonPanel.add(addKeyB);
+
+//	    c.gridx = 1;
+	    buttonPanel.add(addMaybeKeyB);
+	    
+//	    c.gridx = 2;
+	    buttonPanel.add(addHighlightB);
+	 
+//	    c.gridx = 3;
+	    buttonPanel.add(addReplayB);
+	    
+	    buttonPanel.add(oopsB);
+	    
+	    add(buttonPanel, c);
+	    
+	    c.gridy = 6;
+	    c.gridx = 0;
+	    c.weightx = 2.0;
+	    add (lastEntryTF, c);
+	 
+
+	    //TableColumn col;
+	    table.getColumnModel().getColumn(0).setPreferredWidth(60);
+	    table.getColumnModel().getColumn(1).setPreferredWidth(5);
+	    table.getColumnModel().getColumn(2).setPreferredWidth(350);
+	    
+	    c.gridy = 7;
+	    c.gridx = 0;
+	    add (table, c);
+
+	}
  
 	public void actionPerformed(ActionEvent e) {
 		if (START.equals(e.getActionCommand())) {
 			gameStart = LocalDateTime.now();
 			System.out.println(START + ": " + gameStart.toString());
 			startB.setEnabled(false);
+			backupB.setEnabled(true);
 			endB.setEnabled(true);
 			grabTimeB.setEnabled(true);
+			filenameTF.setEnabled(false);
 			
+			try { filename = filenameTF.getText(); }
+			catch (NullPointerException npe) {
+				System.out.println("No filename given; using game_chart");
+				filename = "game_chart";
+			}
+			
+			if ((filename == null) || (filename.equals(""))) { filename = "game_chart"; }
+			
+			System.out.println("filename>" + filename + "<");
+			
+			try {
+				fw = new FileWriter(new File(file_dir + filename + ".csv"));
+			}
+			catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+			
+		}
+		else if (BACKUP.equals(e.getActionCommand())) {
+			System.out.println(BACKUP);
+			produceBackupFile();
 		}
 		else if (END.equals(e.getActionCommand())) {
 			System.out.println(END);
@@ -227,6 +377,7 @@ implements ActionListener {
 			addMaybeKeyB.setEnabled(true);
 			addHighlightB.setEnabled(true);
 			addReplayB.setEnabled(true);
+			oopsB.setEnabled(true);
 
 			StringSelection selection = new StringSelection(grabbedTime + "xx\t");
 			clipboard.setContents(selection, selection);
@@ -247,10 +398,12 @@ implements ActionListener {
 			System.out.println(ADDREPLAY);
 			updateGrabbedTime();
 			grabbedTimeTF.setText(grabbedTime);
-			System.out.println (grabbedTime + "\t" + ' ' + "\t" + "  R");
-			lastEntryTF.setText(grabbedTime + "\t" + ' ' + "\t" + "  R");
+			String play = grabbedTime + "\t" + ' ' + "\t" + "  R";
+			System.out.println (play);
+			lastEntryTF.setText(play);
+			entries.add(play);
 			try {
-				fw.write (grabbedTime + "\t" + ' ' + "\t" + "  R");
+				fw.write (play);
 				fw.write(System.lineSeparator());
 			}
 			catch (IOException ioe) {
@@ -258,6 +411,19 @@ implements ActionListener {
 			}
 			myTable.addRowAtBottom(grabbedTime, " ", "R");
 			
+		}
+		else if (OOPS.equals(e.getActionCommand())) {
+			System.out.println(OOPS);
+			System.out.println("\t" + ' ' + "\t" + "disregard previous");
+			try {
+				fw.write ("\t" + ' ' + "\t" + "disregard previous");
+				entries.add("\t" + ' ' + "\t" + "disregard previous");
+				fw.write(System.lineSeparator());
+			}
+			catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+			myTable.addRowAtBottom(" ", " ", "disregard previous");
 		}
 	}
 	
@@ -272,12 +438,37 @@ implements ActionListener {
 		
 	}
 	
+	private void produceBackupFile() {
+		FileWriter fw2;
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MMdd_HHmmss");
+			String backupFileNameSuffix = "_backup_" + LocalDateTime.now().format(formatter);
+			fw2 = new FileWriter(new File(file_dir + filename +	backupFileNameSuffix + ".csv"));
+		
+			for(String entry : entries) {
+				try {
+					fw2.write (entry);
+					fw2.write(System.lineSeparator());
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			fw2.close ();
+		}
+		catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+	
 	private void postHighlight(String playType) {
 		getDescription();
-		System.out.println (grabbedTime + "\t" + playType + "\t" + description);
-		lastEntryTF.setText(grabbedTime + "\t" + playType + "\t" + description);
+		String play = new String(grabbedTime + "\t" + playType + "\t" + description);
+		System.out.println (play);
+		lastEntryTF.setText(play);
+		entries.add(play);
 		try {
-			fw.write (grabbedTime + "\t" + playType + "\t" + description);
+			fw.write (play);
 			fw.write(System.lineSeparator());
 		}
 		catch (IOException e) {
